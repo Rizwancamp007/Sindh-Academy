@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://sindhacademy-backend.onrender.com/api/:path*"
+    }
+  ]
+}
