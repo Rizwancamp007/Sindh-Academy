@@ -43,10 +43,11 @@ export const Footer = () => {
           <h4 style={{ color: 'var(--text-primary)', fontSize: '16px' }}>Quick Navigation</h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '14px' }}>
             <Link to="/" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Home</Link>
-            <a href="/#about" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>About Academy</a>
-            <a href="/#demo" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Video Lectures</a>
-            <a href="/#reviews" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Success Stories</a>
-            <a href="/#contact" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Contact Us</a>
+            <Link to="/about" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>About Academy</Link>
+            <Link to="/lectures" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Video Lectures</Link>
+            <Link to="/mock-tests" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Mock Assessments</Link>
+            <Link to="/search-mcqs" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Search MCQs</Link>
+            <Link to="/contact" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Contact Us</Link>
           </div>
         </div>
 
@@ -54,10 +55,10 @@ export const Footer = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <h4 style={{ color: 'var(--text-primary)', fontSize: '16px' }}>Academy Location</h4>
           <p style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
-            📍 Eidgah Road, near Govt Degree College,<br />
+            📍 Sindh Public School Near National Bank Devri Road Ghotki,<br />
             Ghotki, Sindh, Pakistan.<br /><br />
-            📞 Support: +92 301 2345678<br />
-            ✉️ admin@sindhacademy.edu.pk
+            📞 Support: +92 300 9314064<br />
+            ✉️ seaghotki01@gmail.com
           </p>
         </div>
 
@@ -66,10 +67,10 @@ export const Footer = () => {
           <h4 style={{ color: 'var(--text-primary)', fontSize: '16px' }}>Follow Us</h4>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Connect with Sindh Educational Academy on social networks:</p>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <a 
-              href="https://facebook.com/sindhacademy" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href="https://web.facebook.com/sindhedu.ghotki/"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',
@@ -82,26 +83,11 @@ export const Footer = () => {
             >
               Facebook
             </a>
-            <a 
-              href="https://instagram.com/sindhacademy" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 600,
-                background: 'rgba(236, 72, 153, 0.15)',
-                color: '#ec4899',
-                textDecoration: 'none'
-              }}
-            >
-              Instagram
-            </a>
-            <a 
-              href="https://tiktok.com/@sindhacademy" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+
+            <a
+              href="https://www.tiktok.com/@sindh.educational"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',
@@ -114,10 +100,10 @@ export const Footer = () => {
             >
               TikTok
             </a>
-            <a 
-              href="https://wa.me/923012345678" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href="https://wa.me/923009314064"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',

@@ -320,9 +320,30 @@ const StudentDashboard = ({ user, authFetch }) => {
   const [uploadMsg, setUploadMsg] = useState({ type: '', text: '' });
   const [lectures, setLectures] = useState([]);
   const [exams, setExams] = useState([]);
+  const [attempts, setAttempts] = useState([]);
+  const [reviewAttempt, setReviewAttempt] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const [activeVideo, setActiveVideo] = useState(null);
   const [subTab, setSubTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+
+  const handleReviewAttempt = async (attemptId) => {
+    setReviewLoading(true);
+    try {
+      const res = await authFetch(`/api/v1/exams/attempts/${attemptId}`);
+      const data = await res.json();
+      if (data.success) {
+        setReviewAttempt(data.attempt);
+      } else {
+        alert(data.message || 'Failed to fetch details');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error loading review sheet');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   const getLectureType = (fileId) => {
     if (!fileId) return 'standard';
@@ -373,6 +394,10 @@ const StudentDashboard = ({ user, authFetch }) => {
       const examsRes = await authFetch('/api/v1/exams');
       const examsData = await examsRes.json();
       if (examsData.success) setExams(examsData.exams);
+
+      const attemptsRes = await authFetch('/api/v1/exams/my-attempts');
+      const attemptsData = await attemptsRes.json();
+      if (attemptsData.success) setAttempts(attemptsData.attempts);
     } catch (err) {
       console.error(err);
     } finally {
@@ -493,6 +518,14 @@ const StudentDashboard = ({ user, authFetch }) => {
           >
             <FileText size={16} />
             <span>Mock Tests ({exams.length})</span>
+          </button>
+          <button
+            onClick={() => setSubTab('attempts-history')}
+            className={subTab === 'attempts-history' ? 'btn-primary' : 'btn-secondary'}
+            style={{ padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Award size={16} />
+            <span>Attempts History ({attempts.length})</span>
           </button>
         </div>
       )}
@@ -938,38 +971,264 @@ const StudentDashboard = ({ user, authFetch }) => {
             <p style={{ color: 'var(--text-muted)' }}>No mock tests published yet.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {exams.map((e) => (
-                <div key={e._id} className="glass-panel hover-card-3d" style={{ padding: '24px', background: 'rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                  <div>
-                    <h4 style={{ fontSize: '18px' }}>{e.title}</h4>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '5px' }}>{e.description}</p>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'inline-block', marginTop: '8px' }}>
-                      Duration: {e.durationMinutes || e.duration} Mins • {e.isMonthly ? 'Monthly Test' : 'Standard Mock'}
+              {exams.map((e) => {
+                const hasAttempted = attempts.find(a => a.examId === e._id || (a.examId && a.examId._id === e._id));
+                return (
+                  <div key={e._id} className="glass-panel hover-card-3d" style={{ padding: '24px', background: 'rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                    <div>
+                      <h4 style={{ fontSize: '18px' }}>{e.title}</h4>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '5px' }}>{e.description}</p>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'inline-block', marginTop: '8px' }}>
+                        Duration: {e.durationMinutes || e.duration} Mins • {e.isMonthly ? 'Monthly Test' : 'Standard Mock'}
+                      </span>
+                    </div>
+                    {e.externalDocLink ? (
+                      <a
+                        href={e.externalDocLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-primary"
+                        style={{ padding: '10px 20px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
+                      >
+                        <span>Open Mock Doc</span>
+                      </a>
+                    ) : hasAttempted ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <span style={{ background: 'rgba(16, 185, 129, 0.12)', color: 'var(--success)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
+                          Attempted ✓ Score: {hasAttempted.score} Marks
+                        </span>
+                        <button
+                          onClick={() => handleReviewAttempt(hasAttempted._id)}
+                          className="btn-secondary"
+                          style={{ padding: '8px 16px', fontSize: '12px' }}
+                        >
+                          {reviewLoading ? 'Loading...' : 'Review Sheet'}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => navigate(`/exam/${e._id}`)}
+                        className="btn-primary"
+                        style={{ padding: '10px 20px', fontSize: '13px' }}
+                      >
+                        Launch Exam Engine
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {user.isPaid && subTab === 'attempts-history' && (
+        <div className="glass-panel" style={{ padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>Your Past Exam Attempts</h3>
+            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Total Completed: {attempts.length}</span>
+          </div>
+          {attempts.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>You have not completed any mock tests yet.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              {attempts.map((att) => {
+                const dateStr = new Date(att.completedAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+                const examTitle = att.examId ? att.examId.title : 'Removed Exam';
+                const examSubject = att.examId ? att.examId.subject : 'General';
+                return (
+                  <div key={att._id} className="glass-panel hover-card-3d" style={{ padding: '20px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                    <div>
+                      <h4 style={{ fontSize: '16px' }}>{examTitle}</h4>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                        Subject: <strong style={{ color: 'var(--accent)' }}>{examSubject}</strong> • Completed on {dateStr}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--success)' }}>{att.score} Marks</span>
+                      </div>
+                      <button
+                        onClick={() => handleReviewAttempt(att._id)}
+                        className="btn-primary"
+                        style={{ padding: '8px 16px', fontSize: '13px' }}
+                      >
+                        {reviewLoading ? 'Loading...' : 'Review Worksheet'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Graded Attempt Review Modal */}
+      {reviewAttempt && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div className="glass-panel text-pop-in" style={{
+            width: '100%',
+            maxWidth: '900px',
+            maxHeight: '90vh',
+            background: 'var(--bg-card)',
+            padding: '30px',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            overflow: 'hidden'
+          }}>
+            <button
+              onClick={() => setReviewAttempt(null)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '24px',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ×
+            </button>
+            
+            <div>
+              <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Graded Scorecard Sheet
+              </span>
+              <h3 style={{ fontSize: '24px', fontFamily: 'var(--font-heading)', marginTop: '4px' }}>{reviewAttempt.examTitle}</h3>
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                <span>Subject: <strong>{reviewAttempt.examSubject}</strong></span>
+                <span>Completed: <strong>{new Date(reviewAttempt.completedAt).toLocaleDateString()}</strong></span>
+                <span>Candidate: <strong>{reviewAttempt.studentName} ({reviewAttempt.studentEmail})</strong></span>
+              </div>
+            </div>
+
+            {/* Score Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Score Obtained</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--success)', marginTop: '4px' }}>{reviewAttempt.score} Marks</p>
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total Questions</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--accent)', marginTop: '4px' }}>{reviewAttempt.totalQuestions}</p>
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Negative Marking</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: reviewAttempt.negativeMarking ? 'var(--danger)' : 'var(--text-secondary)', marginTop: '4px' }}>
+                  {reviewAttempt.negativeMarking ? 'ECAT Mode' : 'Standard'}
+                </p>
+              </div>
+            </div>
+
+            {/* Graded Answers List */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '10px' }}>
+              {reviewAttempt.gradedAnswers && reviewAttempt.gradedAnswers.map((ga, idx) => (
+                <div key={idx} style={{
+                  padding: '20px',
+                  borderRadius: '10px',
+                  background: ga.isCorrect ? 'rgba(16, 185, 129, 0.04)' : ga.selectedOptionIndex === null ? 'rgba(255, 255, 255, 0.01)' : 'rgba(239, 68, 68, 0.04)',
+                  border: `1px solid ${ga.isCorrect ? 'rgba(16, 185, 129, 0.2)' : ga.selectedOptionIndex === null ? 'var(--border-color)' : 'rgba(239, 68, 68, 0.2)'}`
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
+                    <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Q{idx + 1}. {ga.questionText}</p>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      background: ga.isCorrect ? 'rgba(16, 185, 129, 0.15)' : ga.selectedOptionIndex === null ? 'rgba(255,255,255,0.08)' : 'rgba(239, 68, 68, 0.15)',
+                      color: ga.isCorrect ? 'var(--success)' : ga.selectedOptionIndex === null ? 'var(--text-muted)' : 'var(--danger)'
+                    }}>
+                      {ga.isCorrect ? 'Correct ✓' : ga.selectedOptionIndex === null ? 'Unattempted' : 'Incorrect ✗'}
                     </span>
                   </div>
-                  {e.externalDocLink ? (
-                    <a
-                      href={e.externalDocLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-primary"
-                      style={{ padding: '10px 20px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
-                    >
-                      <span>Open Mock Doc</span>
-                    </a>
-                  ) : (
-                    <button
-                      onClick={() => navigate(`/exam/${e._id}`)}
-                      className="btn-primary"
-                      style={{ padding: '10px 20px', fontSize: '13px' }}
-                    >
-                      Launch Exam Engine
-                    </button>
+
+                  <ul style={{ listStyleType: 'none', padding: 0, margin: '15px 0 10px 0', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
+                    {ga.options.map((opt, oIdx) => {
+                      const letter = String.fromCharCode(65 + oIdx);
+                      const isSelected = ga.selectedOptionIndex === letter;
+                      const isCorrectOpt = ga.correctOptionIndex === letter;
+                      
+                      let optionBg = 'transparent';
+                      let optionBorder = '1px solid var(--border-color)';
+                      let optionColor = 'var(--text-secondary)';
+                      
+                      if (isCorrectOpt) {
+                        optionBg = 'rgba(16, 185, 129, 0.1)';
+                        optionBorder = '1px solid var(--success)';
+                        optionColor = 'var(--success)';
+                      } else if (isSelected) {
+                        optionBg = 'rgba(239, 68, 68, 0.1)';
+                        optionBorder = '1px solid var(--danger)';
+                        optionColor = 'var(--danger)';
+                      }
+
+                      return (
+                        <li key={oIdx} style={{
+                          padding: '10px 14px',
+                          borderRadius: '6px',
+                          background: optionBg,
+                          border: optionBorder,
+                          color: optionColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}>
+                          <span>{letter}) {opt}</span>
+                          {isCorrectOpt && <span style={{ fontWeight: 'bold' }}>Correct Answer</span>}
+                          {isSelected && !isCorrectOpt && <span style={{ fontWeight: 'bold' }}>Your Selection</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {ga.explanation && (
+                    <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', borderLeft: '3px solid var(--accent)', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      <strong>Solution Reason:</strong> {ga.explanation}
+                    </div>
                   )}
                 </div>
               ))}
             </div>
-          )}
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
+              <button onClick={() => setReviewAttempt(null)} className="btn-secondary" style={{ padding: '8px 20px' }}>
+                Close Review
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -1746,6 +2005,57 @@ const TeacherDashboard = ({ authFetch }) => {
   const [exams, setExams] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [qSearchQuery, setQSearchQuery] = useState('');
+  const [qSubjectFilter, setQSubjectFilter] = useState('all');
+  const [qPage, setQPage] = useState(1);
+  const [qTotalPages, setQTotalPages] = useState(1);
+  const [qTotalQuestions, setQTotalQuestions] = useState(0);
+
+  // Results leaderboard states
+  const [selectedExamResultsId, setSelectedExamResultsId] = useState('');
+  const [examAttempts, setExamAttempts] = useState([]);
+  const [attemptsLoading, setAttemptsLoading] = useState(false);
+  const [activeReviewAttempt, setActiveReviewAttempt] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  const loadExamAttempts = async (examId) => {
+    if (!examId) {
+      setExamAttempts([]);
+      return;
+    }
+    setAttemptsLoading(true);
+    try {
+      const res = await authFetch(`/api/v1/exams/${examId}/attempts`);
+      const data = await res.json();
+      if (data.success) {
+        setExamAttempts(data.attempts);
+      } else {
+        alert(data.message || 'Failed to fetch mock results');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error fetching mock results');
+    } finally {
+      setAttemptsLoading(false);
+    }
+  };
+
+  const handleLoadReviewAttempt = async (attemptId) => {
+    setReviewLoading(true);
+    try {
+      const res = await authFetch(`/api/v1/exams/attempts/${attemptId}`);
+      const data = await res.json();
+      if (data.success) {
+        setActiveReviewAttempt(data.attempt);
+      } else {
+        alert(data.message || 'Failed to fetch attempt details');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error fetching attempt details');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   const loadLectures = async () => {
     try {
@@ -1766,11 +2076,22 @@ const TeacherDashboard = ({ authFetch }) => {
     } catch (e) { console.error(e); }
   };
 
-  const loadQuestions = async (searchVal = '') => {
+  const loadQuestions = async (searchVal = '', subjectFilter = 'all', pageNum = 1) => {
     try {
-      const res = await authFetch(`/api/v1/exams/questions?q=${encodeURIComponent(searchVal)}`);
+      const res = await authFetch(`/api/v1/exams/questions?q=${encodeURIComponent(searchVal)}&subject=${encodeURIComponent(subjectFilter)}&page=${pageNum}&limit=50`);
       const data = await res.json();
-      if (data.success) setQuestions(data.questions);
+      if (data.success) {
+        setQuestions(data.questions);
+        if (data.pagination) {
+          setQPage(data.pagination.page);
+          setQTotalPages(data.pagination.pages);
+          setQTotalQuestions(data.pagination.total);
+        } else {
+          setQPage(1);
+          setQTotalPages(1);
+          setQTotalQuestions(data.questions.length);
+        }
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -1893,8 +2214,17 @@ const TeacherDashboard = ({ authFetch }) => {
   useEffect(() => {
     loadLectures();
     loadExams();
-    loadQuestions();
   }, [msg]);
+
+  useEffect(() => {
+    loadQuestions(qSearchQuery, qSubjectFilter, qPage);
+  }, [qSubjectFilter, qPage]);
+
+  useEffect(() => {
+    if (questionSource === 'manual') {
+      loadQuestions(manualSearch, manualSubjectFilter, 1);
+    }
+  }, [manualSearch, manualSubjectFilter, questionSource]);
 
   const handleCreateMCQ = async (e) => {
     e.preventDefault();
@@ -2099,7 +2429,7 @@ const TeacherDashboard = ({ authFetch }) => {
 
   const questionsToSelect = questions.filter(q => {
     const matchesSearch = q.questionText.toLowerCase().includes(manualSearch.toLowerCase());
-    const matchesSubject = manualSubjectFilter === 'all' || q.subject === manualSubjectFilter;
+    const matchesSubject = manualSubjectFilter === 'all' || q.subject.toLowerCase() === manualSubjectFilter.toLowerCase();
     return matchesSearch && matchesSubject;
   });
 
@@ -2126,6 +2456,9 @@ const TeacherDashboard = ({ authFetch }) => {
         </button>
         <button onClick={() => setTab('list-mcqs')} className={tab === 'list-mcqs' ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 16px', background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}>
           Manage MCQ Bank ({questions.length})
+        </button>
+        <button onClick={() => { setTab('results-leaderboard'); setExamAttempts([]); setSelectedExamResultsId(''); }} className={tab === 'results-leaderboard' ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 16px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
+          Mock Results Leaderboards
         </button>
       </div>
 
@@ -2857,16 +3190,75 @@ Q2: Next question prompt...`}
             View and delete questions stored in the global entry exam database.
           </p>
 
-          <form onSubmit={(evt) => { evt.preventDefault(); loadQuestions(qSearchQuery); }} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Search questions by keyword..."
-              value={qSearchQuery}
-              onChange={(e) => setQSearchQuery(e.target.value)}
-            />
-            <button type="submit" className="btn-primary" style={{ padding: '0 20px' }}>Search</button>
-          </form>
+          <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <form onSubmit={(evt) => { evt.preventDefault(); setQPage(1); loadQuestions(qSearchQuery, qSubjectFilter, 1); }} style={{ display: 'flex', gap: '10px', flex: 1, minWidth: '250px' }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Search questions by keyword..."
+                value={qSearchQuery}
+                onChange={(e) => setQSearchQuery(e.target.value)}
+              />
+              <button type="submit" className="btn-primary" style={{ padding: '0 20px' }}>Search</button>
+            </form>
+
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Subject Portion:</span>
+              <select
+                className="form-input"
+                style={{ width: '150px' }}
+                value={qSubjectFilter}
+                onChange={(e) => {
+                  setQSubjectFilter(e.target.value);
+                  setQPage(1);
+                  loadQuestions(qSearchQuery, e.target.value, 1);
+                }}
+              >
+                <option value="all">All Subjects</option>
+                <option value="Biology">Biology</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Physics">Physics</option>
+                <option value="English">English</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+              Showing {questions.length} of {qTotalQuestions} questions in portion.
+            </span>
+            {qTotalPages > 1 && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  disabled={qPage <= 1}
+                  className="btn-secondary"
+                  style={{ padding: '4px 10px', fontSize: '12px', opacity: qPage <= 1 ? 0.5 : 1 }}
+                  onClick={() => {
+                    const prevPage = qPage - 1;
+                    setQPage(prevPage);
+                    loadQuestions(qSearchQuery, qSubjectFilter, prevPage);
+                  }}
+                >
+                  ◀ Prev
+                </button>
+                <span style={{ fontSize: '12px', fontWeight: 600 }}>Page {qPage} of {qTotalPages}</span>
+                <button
+                  disabled={qPage >= qTotalPages}
+                  className="btn-secondary"
+                  style={{ padding: '4px 10px', fontSize: '12px', opacity: qPage >= qTotalPages ? 0.5 : 1 }}
+                  onClick={() => {
+                    const nextPage = qPage + 1;
+                    setQPage(nextPage);
+                    loadQuestions(qSearchQuery, qSubjectFilter, nextPage);
+                  }}
+                >
+                  Next ▶
+                </button>
+              </div>
+            )}
+          </div>
 
           {questions.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No matching questions found in bank.</p>
@@ -2906,6 +3298,37 @@ Q2: Next question prompt...`}
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Bottom Pagination Controls */}
+          {qTotalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', alignItems: 'center', marginTop: '20px' }}>
+              <button
+                disabled={qPage <= 1}
+                className="btn-secondary"
+                style={{ padding: '6px 14px', fontSize: '13px', opacity: qPage <= 1 ? 0.5 : 1 }}
+                onClick={() => {
+                  const prevPage = qPage - 1;
+                  setQPage(prevPage);
+                  loadQuestions(qSearchQuery, qSubjectFilter, prevPage);
+                }}
+              >
+                ◀ Prev
+              </button>
+              <span style={{ fontSize: '13px', fontWeight: 600 }}>Page {qPage} of {qTotalPages}</span>
+              <button
+                disabled={qPage >= qTotalPages}
+                className="btn-secondary"
+                style={{ padding: '6px 14px', fontSize: '13px', opacity: qPage >= qTotalPages ? 0.5 : 1 }}
+                onClick={() => {
+                  const nextPage = qPage + 1;
+                  setQPage(nextPage);
+                  loadQuestions(qSearchQuery, qSubjectFilter, nextPage);
+                }}
+              >
+                Next ▶
+              </button>
             </div>
           )}
         </div>
@@ -3003,6 +3426,248 @@ Q2: Next question prompt...`}
         </div>
       )}
 
+      {tab === 'results-leaderboard' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <h3>Mock Results Leaderboard</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '10px' }}>
+            Select a published mock exam below to view the ranked list of student submissions, scores, and detailed answers.
+          </p>
+
+          <div className="form-group" style={{ maxWidth: '400px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 600 }}>Select Mock Exam</label>
+            <select
+              className="form-input"
+              value={selectedExamResultsId}
+              onChange={(e) => {
+                setSelectedExamResultsId(e.target.value);
+                loadExamAttempts(e.target.value);
+              }}
+            >
+              <option value="">-- Choose an Exam --</option>
+              {exams.map((ex) => (
+                <option key={ex._id} value={ex._id}>{ex.title} ({ex.subject})</option>
+              ))}
+            </select>
+          </div>
+
+          {attemptsLoading ? (
+            <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Loading student results leaderboard...</p>
+          ) : selectedExamResultsId && examAttempts.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No students have attempted this exam yet.</p>
+          ) : selectedExamResultsId ? (
+            <div className="glass-panel" style={{ padding: '0px', overflowX: 'auto', border: '1px solid var(--border-color)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid var(--border-color)' }}>
+                    <th style={{ padding: '16px 20px', fontWeight: 600 }}>Rank</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600 }}>Student Name</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600 }}>Email Address</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600, textAlign: 'center' }}>Score Obtained</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600 }}>Completed At</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600, textAlign: 'center' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {examAttempts.map((att, index) => {
+                    const compDate = new Date(att.completedAt).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                    return (
+                      <tr key={att._id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', transition: 'background 0.2s' }}>
+                        <td style={{ padding: '16px 20px', fontWeight: 'bold', color: index === 0 ? '#f59e0b' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : 'var(--text-muted)' }}>
+                          #{index + 1}
+                        </td>
+                        <td style={{ padding: '16px 20px', fontWeight: 500 }}>{att.studentId ? att.studentId.name : 'Deleted Student'}</td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-secondary)' }}>{att.studentId ? att.studentId.email : '-'}</td>
+                        <td style={{ padding: '16px 20px', textAlign: 'center', fontWeight: 'bold', color: 'var(--success)' }}>
+                          {att.score} Marks
+                        </td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-muted)' }}>{compDate}</td>
+                        <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => handleLoadReviewAttempt(att._id)}
+                            className="btn-secondary"
+                            style={{ padding: '6px 12px', fontSize: '12px' }}
+                          >
+                            {reviewLoading ? 'Loading...' : 'View Graded Sheet'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Graded Attempt Review Modal */}
+      {activeReviewAttempt && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div className="glass-panel text-pop-in" style={{
+            width: '100%',
+            maxWidth: '900px',
+            maxHeight: '90vh',
+            background: 'var(--bg-card)',
+            padding: '30px',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            overflow: 'hidden'
+          }}>
+            <button
+              onClick={() => setActiveReviewAttempt(null)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '24px',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ×
+            </button>
+            
+            <div>
+              <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Student Graded Scorecard Sheet
+              </span>
+              <h3 style={{ fontSize: '24px', fontFamily: 'var(--font-heading)', marginTop: '4px' }}>{activeReviewAttempt.examTitle}</h3>
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                <span>Subject: <strong>{activeReviewAttempt.examSubject}</strong></span>
+                <span>Completed: <strong>{new Date(activeReviewAttempt.completedAt).toLocaleDateString()}</strong></span>
+                <span>Candidate: <strong>{activeReviewAttempt.studentName} ({activeReviewAttempt.studentEmail})</strong></span>
+              </div>
+            </div>
+
+            {/* Score Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Score Obtained</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--success)', marginTop: '4px' }}>{activeReviewAttempt.score} Marks</p>
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total Questions</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--accent)', marginTop: '4px' }}>{activeReviewAttempt.totalQuestions}</p>
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Negative Marking</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: activeReviewAttempt.negativeMarking ? 'var(--danger)' : 'var(--text-secondary)', marginTop: '4px' }}>
+                  {activeReviewAttempt.negativeMarking ? 'ECAT Mode' : 'Standard'}
+                </p>
+              </div>
+            </div>
+
+            {/* Graded Answers List */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '10px' }}>
+              {activeReviewAttempt.gradedAnswers && activeReviewAttempt.gradedAnswers.map((ga, idx) => (
+                <div key={idx} style={{
+                  padding: '20px',
+                  borderRadius: '10px',
+                  background: ga.isCorrect ? 'rgba(16, 185, 129, 0.04)' : ga.selectedOptionIndex === null ? 'rgba(255, 255, 255, 0.01)' : 'rgba(239, 68, 68, 0.04)',
+                  border: `1px solid ${ga.isCorrect ? 'rgba(16, 185, 129, 0.2)' : ga.selectedOptionIndex === null ? 'var(--border-color)' : 'rgba(239, 68, 68, 0.2)'}`
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
+                    <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Q{idx + 1}. {ga.questionText}</p>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      background: ga.isCorrect ? 'rgba(16, 185, 129, 0.15)' : ga.selectedOptionIndex === null ? 'rgba(255,255,255,0.08)' : 'rgba(239, 68, 68, 0.15)',
+                      color: ga.isCorrect ? 'var(--success)' : ga.selectedOptionIndex === null ? 'var(--text-muted)' : 'var(--danger)'
+                    }}>
+                      {ga.isCorrect ? 'Correct ✓' : ga.selectedOptionIndex === null ? 'Unattempted' : 'Incorrect ✗'}
+                    </span>
+                  </div>
+
+                  <ul style={{ listStyleType: 'none', padding: 0, margin: '15px 0 10px 0', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
+                    {ga.options.map((opt, oIdx) => {
+                      const letter = String.fromCharCode(65 + oIdx);
+                      const isSelected = ga.selectedOptionIndex === letter;
+                      const isCorrectOpt = ga.correctOptionIndex === letter;
+                      
+                      let optionBg = 'transparent';
+                      let optionBorder = '1px solid var(--border-color)';
+                      let optionColor = 'var(--text-secondary)';
+                      
+                      if (isCorrectOpt) {
+                        optionBg = 'rgba(16, 185, 129, 0.1)';
+                        optionBorder = '1px solid var(--success)';
+                        optionColor = 'var(--success)';
+                      } else if (isSelected) {
+                        optionBg = 'rgba(239, 68, 68, 0.1)';
+                        optionBorder = '1px solid var(--danger)';
+                        optionColor = 'var(--danger)';
+                      }
+
+                      return (
+                        <li key={oIdx} style={{
+                          padding: '10px 14px',
+                          borderRadius: '6px',
+                          background: optionBg,
+                          border: optionBorder,
+                          color: optionColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}>
+                          <span>{letter}) {opt}</span>
+                          {isCorrectOpt && <span style={{ fontWeight: 'bold' }}>Correct Answer</span>}
+                          {isSelected && !isCorrectOpt && <span style={{ fontWeight: 'bold' }}>Student's Selection</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {ga.explanation && (
+                    <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', borderLeft: '3px solid var(--accent)', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      <strong>Solution Reason:</strong> {ga.explanation}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
+              <button onClick={() => setActiveReviewAttempt(null)} className="btn-secondary" style={{ padding: '8px 20px' }}>
+                Close Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
@@ -3035,6 +3700,54 @@ const AdminDashboard = ({ authFetch }) => {
   // Logs operator role filter state
   const [operatorFilter, setOperatorFilter] = useState('all');
 
+  // Results leaderboard states
+  const [exams, setExams] = useState([]);
+  const [selectedExamResultsId, setSelectedExamResultsId] = useState('');
+  const [examAttempts, setExamAttempts] = useState([]);
+  const [attemptsLoading, setAttemptsLoading] = useState(false);
+  const [activeReviewAttempt, setActiveReviewAttempt] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  const loadExamAttempts = async (examId) => {
+    if (!examId) {
+      setExamAttempts([]);
+      return;
+    }
+    setAttemptsLoading(true);
+    try {
+      const res = await authFetch(`/api/v1/exams/${examId}/attempts`);
+      const data = await res.json();
+      if (data.success) {
+        setExamAttempts(data.attempts);
+      } else {
+        alert(data.message || 'Failed to fetch mock results');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error fetching mock results');
+    } finally {
+      setAttemptsLoading(false);
+    }
+  };
+
+  const handleLoadReviewAttempt = async (attemptId) => {
+    setReviewLoading(true);
+    try {
+      const res = await authFetch(`/api/v1/exams/attempts/${attemptId}`);
+      const data = await res.json();
+      if (data.success) {
+        setActiveReviewAttempt(data.attempt);
+      } else {
+        alert(data.message || 'Failed to fetch attempt details');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error fetching attempt details');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
   const loadAllAdminData = async () => {
     try {
       const statsRes = await authFetch('/api/v1/admin/stats');
@@ -3056,6 +3769,10 @@ const AdminDashboard = ({ authFetch }) => {
       const reviewsRes = await authFetch('/api/v1/resources/reviews');
       const reviewsData = await reviewsRes.json();
       if (reviewsData.success) setReviews(reviewsData.reviews);
+
+      const examsRes = await authFetch('/api/v1/exams');
+      const examsData = await examsRes.json();
+      if (examsData.success) setExams(examsData.exams);
     } catch (e) {
       console.error(e);
     }
@@ -3163,6 +3880,9 @@ const AdminDashboard = ({ authFetch }) => {
         </button>
         <button onClick={() => setTab('resources')} className={tab === 'resources' ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 16px', background: 'rgba(139, 92, 246, 0.12)', color: 'var(--accent)' }}>
           Academic Content Hub (CRUD)
+        </button>
+        <button onClick={() => { setTab('results-leaderboard'); setExamAttempts([]); setSelectedExamResultsId(''); }} className={tab === 'results-leaderboard' ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 16px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
+          Mock Results Leaderboards
         </button>
       </div>
 
@@ -3613,6 +4333,248 @@ const AdminDashboard = ({ authFetch }) => {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {tab === 'results-leaderboard' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <h3>Mock Results Leaderboard (Admin view)</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '10px' }}>
+            Select any published mock exam to inspect all student attempts and their graded worksheets.
+          </p>
+
+          <div className="form-group" style={{ maxWidth: '400px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 600 }}>Select Mock Exam</label>
+            <select
+              className="form-input"
+              value={selectedExamResultsId}
+              onChange={(e) => {
+                setSelectedExamResultsId(e.target.value);
+                loadExamAttempts(e.target.value);
+              }}
+            >
+              <option value="">-- Choose an Exam --</option>
+              {exams.map((ex) => (
+                <option key={ex._id} value={ex._id}>{ex.title} ({ex.subject})</option>
+              ))}
+            </select>
+          </div>
+
+          {attemptsLoading ? (
+            <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Loading student results leaderboard...</p>
+          ) : selectedExamResultsId && examAttempts.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No students have attempted this exam yet.</p>
+          ) : selectedExamResultsId ? (
+            <div className="glass-panel" style={{ padding: '0px', overflowX: 'auto', border: '1px solid var(--border-color)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid var(--border-color)' }}>
+                    <th style={{ padding: '16px 20px', fontWeight: 600 }}>Rank</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600 }}>Student Name</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600 }}>Email Address</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600, textAlign: 'center' }}>Score Obtained</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600 }}>Completed At</th>
+                    <th style={{ padding: '16px 20px', fontWeight: 600, textAlign: 'center' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {examAttempts.map((att, index) => {
+                    const compDate = new Date(att.completedAt).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                    return (
+                      <tr key={att._id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', transition: 'background 0.2s' }}>
+                        <td style={{ padding: '16px 20px', fontWeight: 'bold', color: index === 0 ? '#f59e0b' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : 'var(--text-muted)' }}>
+                          #{index + 1}
+                        </td>
+                        <td style={{ padding: '16px 20px', fontWeight: 500 }}>{att.studentId ? att.studentId.name : 'Deleted Student'}</td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-secondary)' }}>{att.studentId ? att.studentId.email : '-'}</td>
+                        <td style={{ padding: '16px 20px', textAlign: 'center', fontWeight: 'bold', color: 'var(--success)' }}>
+                          {att.score} Marks
+                        </td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-muted)' }}>{compDate}</td>
+                        <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => handleLoadReviewAttempt(att._id)}
+                            className="btn-secondary"
+                            style={{ padding: '6px 12px', fontSize: '12px' }}
+                          >
+                            {reviewLoading ? 'Loading...' : 'View Graded Sheet'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Graded Attempt Review Modal */}
+      {activeReviewAttempt && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div className="glass-panel text-pop-in" style={{
+            width: '100%',
+            maxWidth: '900px',
+            maxHeight: '90vh',
+            background: 'var(--bg-card)',
+            padding: '30px',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            overflow: 'hidden'
+          }}>
+            <button
+              onClick={() => setActiveReviewAttempt(null)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '24px',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ×
+            </button>
+            
+            <div>
+              <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Student Graded Scorecard Sheet
+              </span>
+              <h3 style={{ fontSize: '24px', fontFamily: 'var(--font-heading)', marginTop: '4px' }}>{activeReviewAttempt.examTitle}</h3>
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                <span>Subject: <strong>{activeReviewAttempt.examSubject}</strong></span>
+                <span>Completed: <strong>{new Date(activeReviewAttempt.completedAt).toLocaleDateString()}</strong></span>
+                <span>Candidate: <strong>{activeReviewAttempt.studentName} ({activeReviewAttempt.studentEmail})</strong></span>
+              </div>
+            </div>
+
+            {/* Score Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Score Obtained</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--success)', marginTop: '4px' }}>{activeReviewAttempt.score} Marks</p>
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total Questions</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--accent)', marginTop: '4px' }}>{activeReviewAttempt.totalQuestions}</p>
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Negative Marking</span>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: activeReviewAttempt.negativeMarking ? 'var(--danger)' : 'var(--text-secondary)', marginTop: '4px' }}>
+                  {activeReviewAttempt.negativeMarking ? 'ECAT Mode' : 'Standard'}
+                </p>
+              </div>
+            </div>
+
+            {/* Graded Answers List */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '10px' }}>
+              {activeReviewAttempt.gradedAnswers && activeReviewAttempt.gradedAnswers.map((ga, idx) => (
+                <div key={idx} style={{
+                  padding: '20px',
+                  borderRadius: '10px',
+                  background: ga.isCorrect ? 'rgba(16, 185, 129, 0.04)' : ga.selectedOptionIndex === null ? 'rgba(255, 255, 255, 0.01)' : 'rgba(239, 68, 68, 0.04)',
+                  border: `1px solid ${ga.isCorrect ? 'rgba(16, 185, 129, 0.2)' : ga.selectedOptionIndex === null ? 'var(--border-color)' : 'rgba(239, 68, 68, 0.2)'}`
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
+                    <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Q{idx + 1}. {ga.questionText}</p>
+                    <span style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      background: ga.isCorrect ? 'rgba(16, 185, 129, 0.15)' : ga.selectedOptionIndex === null ? 'rgba(255,255,255,0.08)' : 'rgba(239, 68, 68, 0.15)',
+                      color: ga.isCorrect ? 'var(--success)' : ga.selectedOptionIndex === null ? 'var(--text-muted)' : 'var(--danger)'
+                    }}>
+                      {ga.isCorrect ? 'Correct ✓' : ga.selectedOptionIndex === null ? 'Unattempted' : 'Incorrect ✗'}
+                    </span>
+                  </div>
+
+                  <ul style={{ listStyleType: 'none', padding: 0, margin: '15px 0 10px 0', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
+                    {ga.options.map((opt, oIdx) => {
+                      const letter = String.fromCharCode(65 + oIdx);
+                      const isSelected = ga.selectedOptionIndex === letter;
+                      const isCorrectOpt = ga.correctOptionIndex === letter;
+                      
+                      let optionBg = 'transparent';
+                      let optionBorder = '1px solid var(--border-color)';
+                      let optionColor = 'var(--text-secondary)';
+                      
+                      if (isCorrectOpt) {
+                        optionBg = 'rgba(16, 185, 129, 0.1)';
+                        optionBorder = '1px solid var(--success)';
+                        optionColor = 'var(--success)';
+                      } else if (isSelected) {
+                        optionBg = 'rgba(239, 68, 68, 0.1)';
+                        optionBorder = '1px solid var(--danger)';
+                        optionColor = 'var(--danger)';
+                      }
+
+                      return (
+                        <li key={oIdx} style={{
+                          padding: '10px 14px',
+                          borderRadius: '6px',
+                          background: optionBg,
+                          border: optionBorder,
+                          color: optionColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}>
+                          <span>{letter}) {opt}</span>
+                          {isCorrectOpt && <span style={{ fontWeight: 'bold' }}>Correct Answer</span>}
+                          {isSelected && !isCorrectOpt && <span style={{ fontWeight: 'bold' }}>Student's Selection</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {ga.explanation && (
+                    <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', borderLeft: '3px solid var(--accent)', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      <strong>Solution Reason:</strong> {ga.explanation}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
+              <button onClick={() => setActiveReviewAttempt(null)} className="btn-secondary" style={{ padding: '8px 20px' }}>
+                Close Review
+              </button>
+            </div>
           </div>
         </div>
       )}

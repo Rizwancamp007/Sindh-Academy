@@ -16,6 +16,8 @@ router.post('/mocks/submit', optionalProtect, examController.submitMock);
 router.post('/create', protect, authorizeRoles('teacher', 'admin'), examController.createExam);
 router.get('/', optionalProtect, examController.getAllExams);
 router.get('/my-attempts', protect, authorizeRoles('student'), examController.getMyAttempts);
+router.get('/attempts/:attemptId', protect, examController.getAttemptDetails);
+router.get('/:examId/attempts', protect, authorizeRoles('teacher', 'admin'), examController.getExamAttempts);
 
 // Docx template uploader
 router.post(

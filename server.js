@@ -17,6 +17,9 @@ connectDB();
 
 const app = express();
 
+// Trust reverse proxy for rate limiting (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 // Set security headers
 app.use(
   helmet({
@@ -72,10 +75,23 @@ app.use('/api/v1/exams', require('./routes/examRoutes'));
 app.use('/api/v1/resources', require('./routes/lectureRoutes'));
 app.use('/api/v1/admin', require('./routes/adminRoutes'));
 
-// Root route for initial verification
-app.get('/', (req, res) => {
-  res.json({ success: true, message: 'Sindh Educational Academy API Active.' });
-});
+// Serve static assets in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/dist')));
+  
+  app.get('*', (req, res) => {
+    // Skip API routes so they don't get intercepted by catch-all
+    if (req.originalUrl.startsWith('/api/')) {
+      return res.status(404).json({ success: false, message: 'API Route Not Found' });
+    }
+    res.sendFile(path.resolve(__dirname, 'client', 'dist', 'index.html'));
+  });
+} else {
+  // Root route for initial verification in development
+  app.get('/', (req, res) => {
+    res.json({ success: true, message: 'Sindh Educational Academy API Active.' });
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

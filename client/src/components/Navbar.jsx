@@ -1,16 +1,19 @@
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Sun, Moon, Flame, LogOut, GraduationCap, Search } from 'lucide-react';
+import { Sun, Moon, Flame, LogOut, Menu, X } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
+    setIsMobileMenuOpen(false);
     navigate('/');
   };
 
@@ -22,33 +25,24 @@ export const Navbar = () => {
       fontWeight: isActive ? 600 : 500,
       fontSize: '15px',
       position: 'relative',
-      padding: '6px 4px',
+      padding: '8px 4px',
       transition: 'color 0.3s ease',
       borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent'
     };
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <nav className="glass-panel" style={{
-      position: 'sticky',
-      top: '20px',
-      margin: '20px auto',
-      width: '90%',
-      maxWidth: '1200px',
-      zIndex: 100,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '15px 30px',
-      borderRadius: '20px',
-      background: 'var(--bg-surface)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
-      border: '1px solid var(--border-color)',
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)'
-    }}>
+    <nav className="glass-panel nav-container">
       {/* Logo */}
-      <Link to="/" style={{
+      <Link to="/" onClick={closeMobileMenu} style={{
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
@@ -69,11 +63,12 @@ export const Navbar = () => {
         </span>
       </Link>
 
-      {/* Nav Links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+      {/* Desktop Nav Links */}
+      <div className="nav-links">
         <Link 
           to="/" 
           onClick={() => {
+            closeMobileMenu();
             if (window.location.pathname === '/') {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
@@ -88,6 +83,9 @@ export const Navbar = () => {
         <Link to="/lectures" style={getLinkStyle('/lectures')}>
           Lectures
         </Link>
+        <Link to="/mock-tests" style={getLinkStyle('/mock-tests')}>
+          Mock Tests
+        </Link>
         <Link to="/search-mcqs" style={getLinkStyle('/search-mcqs')}>
           Search MCQs
         </Link>
@@ -95,46 +93,41 @@ export const Navbar = () => {
           Contact
         </Link>
 
+        {user && (
+          <Link to="/dashboard" style={getLinkStyle('/dashboard')}>
+            Dashboard
+          </Link>
+        )}
+
+        {/* Daily Streak Indicator */}
+        {user && user.role === 'student' && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'rgba(245, 158, 11, 0.15)',
+            color: '#f59e0b',
+            padding: '6px 12px',
+            borderRadius: '20px',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          }}>
+            <Flame size={16} fill="#f59e0b" />
+            <span>{user.dailyStreak || 0} Day Streak</span>
+          </div>
+        )}
+
         {user ? (
-          <>
-            <Link to="/dashboard" style={{
-              textDecoration: 'none',
-              color: 'var(--text-secondary)',
-              fontWeight: 500,
-              fontSize: '15px'
-            }}>
-              Dashboard
-            </Link>
-
-            {/* Daily Streak Indicator */}
-            {user.role === 'student' && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                background: 'rgba(245, 158, 11, 0.15)',
-                color: '#f59e0b',
-                padding: '6px 12px',
-                borderRadius: '20px',
-                fontWeight: 'bold',
-                fontSize: '14px'
-              }}>
-                <Flame size={16} fill="#f59e0b" />
-                <span>{user.dailyStreak || 0} Day Streak</span>
-              </div>
-            )}
-
-            <button onClick={handleLogout} className="btn-secondary" style={{
-              padding: '8px 16px',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              <LogOut size={16} />
-              <span>Logout</span>
-            </button>
-          </>
+          <button onClick={handleLogout} className="btn-secondary" style={{
+            padding: '8px 16px',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <LogOut size={16} />
+            <span>Logout</span>
+          </button>
         ) : (
           <Link to="/login" className="btn-primary" style={{
             padding: '8px 20px',
@@ -160,11 +153,118 @@ export const Navbar = () => {
             justifyContent: 'center',
             transition: 'background 0.3s'
           }}
-          onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
-          onMouseLeave={(e) => e.target.style.background = 'none'}
         >
           {theme === 'day' ? <Moon size={20} /> : <Sun size={20} />}
         </button>
+      </div>
+
+      {/* Right control buttons for mobile (Theme + Menu toggle) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Mobile Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="nav-mobile-theme-btn"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            padding: '8px',
+            borderRadius: '50%',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {theme === 'day' ? <Moon size={20} /> : <Sun size={20} />}
+        </button>
+
+        {/* Hamburger menu button */}
+        <button onClick={toggleMobileMenu} className="nav-toggle-btn" aria-label="Toggle navigation menu">
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Mobile Nav Links Dropdown */}
+      <div className={`nav-mobile-menu ${isMobileMenuOpen ? 'active' : ''}`}>
+        <Link 
+          to="/" 
+          onClick={() => {
+            closeMobileMenu();
+            if (window.location.pathname === '/') {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }} 
+          style={getLinkStyle('/')}
+        >
+          Home
+        </Link>
+        <Link to="/about" onClick={closeMobileMenu} style={getLinkStyle('/about')}>
+          About
+        </Link>
+        <Link to="/lectures" onClick={closeMobileMenu} style={getLinkStyle('/lectures')}>
+          Lectures
+        </Link>
+        <Link to="/mock-tests" onClick={closeMobileMenu} style={getLinkStyle('/mock-tests')}>
+          Mock Tests
+        </Link>
+        <Link to="/search-mcqs" onClick={closeMobileMenu} style={getLinkStyle('/search-mcqs')}>
+          Search MCQs
+        </Link>
+        <Link to="/contact" onClick={closeMobileMenu} style={getLinkStyle('/contact')}>
+          Contact
+        </Link>
+
+        {user && (
+          <Link to="/dashboard" onClick={closeMobileMenu} style={getLinkStyle('/dashboard')}>
+            Dashboard
+          </Link>
+        )}
+
+        {/* Daily Streak Indicator */}
+        {user && user.role === 'student' && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'rgba(245, 158, 11, 0.15)',
+            color: '#f59e0b',
+            padding: '6px 12px',
+            borderRadius: '20px',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            alignSelf: 'flex-start'
+          }}>
+            <Flame size={16} fill="#f59e0b" />
+            <span>{user.dailyStreak || 0} Day Streak</span>
+          </div>
+        )}
+
+        {user ? (
+          <button onClick={handleLogout} className="btn-secondary" style={{
+            padding: '8px 16px',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            alignSelf: 'flex-start',
+            marginTop: '10px'
+          }}>
+            <LogOut size={16} />
+            <span>Logout</span>
+          </button>
+        ) : (
+          <Link to="/login" onClick={closeMobileMenu} className="btn-primary" style={{
+            padding: '8px 20px',
+            fontSize: '14px',
+            textDecoration: 'none',
+            textAlign: 'center',
+            width: '100%',
+            marginTop: '10px'
+          }}>
+            Portal Login
+          </Link>
+        )}
       </div>
     </nav>
   );

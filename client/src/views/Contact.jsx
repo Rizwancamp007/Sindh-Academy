@@ -64,7 +64,7 @@ export const Contact = () => {
               <div style={{ color: 'var(--accent)' }}><MapPin size={24} /></div>
               <div>
                 <strong style={{ display: 'block', fontSize: '14px' }}>Physical Campus</strong>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Sindh Educational Academy, Near Eidgah, Ghotki, Sindh</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>SEA, Sindh Public School Near National Bank Devri Road Ghotki, Sindh</span>
               </div>
             </div>
 
@@ -72,7 +72,7 @@ export const Contact = () => {
               <div style={{ color: 'var(--accent)' }}><Phone size={24} /></div>
               <div>
                 <strong style={{ display: 'block', fontSize: '14px' }}>Telephone Helpline</strong>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>+92 301 2345678</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>+92 300 9314064</span>
               </div>
             </div>
 
@@ -80,13 +80,13 @@ export const Contact = () => {
               <div style={{ color: 'var(--accent)' }}><Mail size={24} /></div>
               <div>
                 <strong style={{ display: 'block', fontSize: '14px' }}>Email Support</strong>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>support@sindhacademy.edu.pk</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>seaghotki01@gmail.com</span>
               </div>
             </div>
           </div>
 
           <a
-            href="https://wa.me/923012345678"
+            href="https://wa.me/923009314064"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary"

@@ -25,29 +25,7 @@ export const AuthProvider = ({ children }) => {
 
         if (data.success) {
           setAccessToken(data.accessToken);
-          
-          // Decode user metadata from JWT payload
-          const base64Url = data.accessToken.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const payload = JSON.parse(window.atob(base64));
-          
-          setUser(prevUser => {
-            if (!prevUser || prevUser.id !== payload.id) {
-              // If user state is empty, initialize with decoded metadata
-              return {
-                id: payload.id,
-                role: payload.role,
-                name: payload.name || 'User',
-                email: payload.email || ''
-              };
-            }
-            return {
-              ...prevUser,
-              id: payload.id,
-              role: payload.role
-            };
-          });
-          
+          setUser(data.user);
           return data.accessToken;
         } else {
           setUser(null);

@@ -65,17 +65,17 @@ export const Home = () => {
         gap: '28px',
         position: 'relative'
       }}>
-        <div className="text-pop-in" style={{ 
-          padding: '6px 14px', 
-          borderRadius: '30px', 
-          background: 'rgba(124, 58, 237, 0.08)', 
-          border: '1px solid rgba(124, 58, 237, 0.2)', 
-          color: 'var(--accent)', 
-          fontSize: '13px', 
-          fontWeight: 600, 
-          textTransform: 'uppercase', 
-          letterSpacing: '0.05em', 
-          marginBottom: '-10px' 
+        <div className="text-pop-in" style={{
+          padding: '6px 14px',
+          borderRadius: '30px',
+          background: 'rgba(124, 58, 237, 0.08)',
+          border: '1px solid rgba(124, 58, 237, 0.2)',
+          color: 'var(--accent)',
+          fontSize: '13px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '-10px'
         }}>
           🎓 Ghotki's Premier Preparatory Portal
         </div>
@@ -103,19 +103,19 @@ export const Home = () => {
             <span>Portal Login</span>
             <ArrowRight size={18} />
           </Link>
-          <Link to="/lectures" className="btn-secondary" style={{ padding: '14px 28px', textDecoration: 'none' }}>
+          <Link to="/mock-tests" className="btn-secondary" style={{ padding: '14px 28px', textDecoration: 'none' }}>
             Attempt Free Mocks
           </Link>
-          <a 
-            href="https://wa.me/923012345678" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="btn-secondary" 
-            style={{ 
-              padding: '14px 28px', 
-              textDecoration: 'none', 
-              background: 'rgba(34, 197, 94, 0.12)', 
-              border: '1.5px solid rgba(34, 197, 94, 0.35)', 
+          <a
+            href="https://wa.me/923009314064"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary"
+            style={{
+              padding: '14px 28px',
+              textDecoration: 'none',
+              background: 'rgba(34, 197, 94, 0.12)',
+              border: '1.5px solid rgba(34, 197, 94, 0.35)',
               color: '#22c55e',
               display: 'flex',
               alignItems: 'center',
@@ -128,8 +128,8 @@ export const Home = () => {
 
         <div style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '8px' }}>
           <span>📍 Eidgah Road, Ghotki</span>
-          <span>📞 Support Line: +92 301 2345678</span>
-          <span>✉️ support@sindhacademy.edu.pk</span>
+          <span>📞 Support Line: +92 300 9314064</span>
+          <span>✉️ seaghotki01@gmail.com</span>
         </div>
       </header>
 
@@ -202,7 +202,7 @@ export const Home = () => {
           <p style={{ color: 'var(--text-secondary)' }}>Learn from Ghotki's most experienced educators utilizing simple conceptual breakdowns.</p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
-          
+
           <div className="glass-panel hover-card-3d hover-glow-violet" style={{ padding: '35px 25px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center', transition: 'var(--transition-smooth)' }}>
             <img src="/assests/biology-instructor.jpg" alt="Prof. Rahmatullah Kalhoro" style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid var(--accent)' }} />
             <div>
@@ -233,6 +233,17 @@ export const Home = () => {
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5 }}>
               Expert in numerical short-tricks and analytical equations required to score high marks in ECAT.
+            </p>
+          </div>
+
+          <div className="glass-panel hover-card-3d hover-glow-gold" style={{ padding: '35px 25px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center', transition: 'var(--transition-smooth)' }}>
+            <img src="/assests/english-instructor.png" alt="Prof. Shahnawaz Mirani" style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid #f59e0b' }} />
+            <div>
+              <h4 style={{ fontSize: '18px', margin: 0 }}>Prof. Shahnawaz Mirani</h4>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>English Specialist</span>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5 }}>
+              Expert in English grammar patterns, comprehension structures, and vocabulary building strategies for entrance test success.
             </p>
           </div>
 

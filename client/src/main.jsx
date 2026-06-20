@@ -11,6 +11,7 @@ import { Dashboard, StudentDashboardView, ClerkDashboardView, TeacherDashboardVi
 import { ExamEngine } from './views/ExamEngine';
 import { About } from './views/About';
 import { Lectures } from './views/Lectures';
+import { MockTests } from './views/MockTests';
 import { Contact } from './views/Contact';
 import { SearchMcqs } from './views/SearchMcqs';
 import { Footer } from './components/Footer';
@@ -26,6 +27,7 @@ const AppLayout = () => {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/lectures" element={<Lectures />} />
+          <Route path="/mock-tests" element={<MockTests />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/search-mcqs" element={<SearchMcqs />} />
           <Route path="/login" element={<Login />} />

@@ -361,4 +361,191 @@ h4, h5, h6 {
   }
 }
 
+/* Smooth theme transitions for core text, panels, and input fields */
+body, h1, h2, h3, h4, h5, h6, p, span, .glass-panel, .form-input, .btn-primary, .btn-secondary {
+  transition: color 0.4s ease, background 0.4s ease, background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+/* Page entrance slide-up fade animations */
+.slide-up-fade {
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================
+   MOBILE & TABLET RESPONSIVE SYSTEM
+   ========================================== */
+
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  transition: var(--transition-smooth);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-toggle-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.nav-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-mobile-menu {
+  display: none;
+  width: 100%;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px 0 5px 0;
+  border-top: 1px solid var(--border-color);
+  margin-top: 15px;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Media Queries */
+@media (max-width: 991px) {
+  .nav-container {
+    flex-wrap: wrap;
+    padding: 15px 20px;
+  }
+
+  .nav-links {
+    display: none; /* Hide desktop link list */
+  }
+
+  .nav-toggle-btn {
+    display: flex; /* Show menu toggle */
+  }
+
+  .nav-mobile-theme-btn {
+    display: flex !important; /* Show mobile theme toggle next to menu */
+  }
+
+  .nav-mobile-menu.active {
+    display: flex;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Dynamic page layout adjustments */
+  .page-transition {
+    gap: 40px !important;
+  }
+
+  /* Home page sections gap reduction */
+  div[style*="gap: '140px'"],
+  div[style*="gap: 140px"] {
+    gap: 55px !important;
+    margin: 20px auto !important;
+  }
+
+  header[style*="padding: '90px"] {
+    padding: 40px 10px 20px 10px !important;
+    gap: 20px !important;
+  }
+
+  /* Force responsive flex direction on buttons grid */
+  div[style*="display: 'flex'"][style*="gap: '16px'"],
+  div[style*="display: flex"][style*="gap: 16px"] {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* General Grid columns reset */
+  section {
+    gap: 20px !important;
+  }
+
+  /* Automatically stack side-by-side grids on mobile and tablets */
+  div[style*="gridTemplateColumns: '1fr 2fr'"],
+  div[style*="gridTemplateColumns: 1fr 2fr"],
+  div[style*="grid-template-columns: 1fr 2fr"],
+  div[style*="gridTemplateColumns: '1fr 1.5fr'"],
+  div[style*="gridTemplateColumns: 1fr 1.5fr"],
+  div[style*="grid-template-columns: 1fr 1.5fr"],
+  div[style*="gridTemplateColumns: '1fr 1fr'"],
+  div[style*="gridTemplateColumns: 1fr 1fr"],
+  div[style*="grid-template-columns: 1fr 1fr"],
+  form[style*="gridTemplateColumns: '1fr 1fr'"],
+  form[style*="gridTemplateColumns: 1fr 1fr"],
+  form[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Form layouts scaling */
+  .glass-panel {
+    padding: 25px 20px !important;
+  }
+
+  /* Table responsiveness wrapper */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-bottom: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Stack small cards and list items on narrow mobile screens */
+  .glass-panel div[style*="display: 'flex'"][style*="justifyContent: 'space-between'"],
+  .glass-panel div[style*="display: flex"][style*="justify-content: space-between"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  
+  .glass-panel div[style*="display: 'flex'"][style*="justifyContent: 'space-between'"] button,
+  .glass-panel div[style*="display: 'flex'"][style*="justifyContent: 'space-between'"] a,
+  .glass-panel div[style*="display: flex"][style*="justify-content: space-between"] button,
+  .glass-panel div[style*="display: flex"][style*="justify-content: space-between"] a {
+    width: 100% !important;
+    text-align: center !important;
+  }
+}
+
 

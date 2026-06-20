@@ -169,7 +169,7 @@ export const Login = () => {
                 required
                 className="form-input"
                 style={{ paddingLeft: '48px' }}
-                placeholder="student@example.com"
+                placeholder="sarkarkhan@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />

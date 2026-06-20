@@ -465,13 +465,33 @@ exports.uploadTestDoc = async (req, res) => {
 // @access  Private (Teacher / Admin)
 exports.getQuestions = async (req, res) => {
   try {
-    const { subject, q } = req.query;
+    const { subject, q, page, limit } = req.query;
     let query = {};
-    if (subject) query.subject = subject;
+    if (subject && subject !== 'all') {
+      query.subject = { $regex: new RegExp(`^${subject}$`, 'i') };
+    }
     if (q) query.questionText = { $regex: q, $options: 'i' };
 
-    const questions = await Question.find(query).sort('-createdAt').limit(200);
-    res.status(200).json({ success: true, questions });
+    const currentPage = parseInt(page, 10) || 1;
+    const pageLimit = parseInt(limit, 10) || 200; // Increase default limit to 200, allow pagination
+    const skip = (currentPage - 1) * pageLimit;
+
+    const totalQuestions = await Question.countDocuments(query);
+    const questions = await Question.find(query)
+      .sort('-createdAt')
+      .skip(skip)
+      .limit(pageLimit);
+
+    res.status(200).json({
+      success: true,
+      questions,
+      pagination: {
+        total: totalQuestions,
+        page: currentPage,
+        limit: pageLimit,
+        pages: Math.ceil(totalQuestions / pageLimit)
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -568,6 +588,91 @@ exports.updateExam = async (req, res) => {
     });
 
     res.status(200).json({ success: true, exam });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// @desc    Get details of a single past mock test attempt
+// @route   GET /api/v1/exams/attempts/:attemptId
+// @access  Private (Student who attempted, or Teacher/Admin)
+exports.getAttemptDetails = async (req, res) => {
+  try {
+    const attempt = await Attempt.findById(req.params.attemptId)
+      .populate('studentId', 'name email')
+      .populate({
+        path: 'examId',
+        select: 'title subject negativeMarking questions',
+        populate: {
+          path: 'questions'
+        }
+      });
+
+    if (!attempt) {
+      return res.status(404).json({ success: false, message: 'Attempt not found' });
+    }
+
+    // Access check: only student who made it or admin/teacher
+    if (
+      req.user.role === 'student' &&
+      attempt.studentId._id.toString() !== req.user.id
+    ) {
+      return res.status(403).json({ success: false, message: 'Access Denied: unauthorized attempt lookup.' });
+    }
+
+    // Structure graded responses
+    const gradedAnswers = [];
+    const questions = attempt.examId ? attempt.examId.questions : [];
+    
+    questions.forEach((q) => {
+      const selectedOption = attempt.answers ? attempt.answers.get(q._id.toString()) : null;
+      const isCorrect = selectedOption !== null && selectedOption === q.correctOption;
+      
+      gradedAnswers.push({
+        questionId: q._id,
+        questionText: q.questionText,
+        options: q.options,
+        selectedOptionIndex: selectedOption,
+        correctOptionIndex: q.correctOption,
+        isCorrect,
+        explanation: q.explanation
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      attempt: {
+        _id: attempt._id,
+        score: attempt.score,
+        completedAt: attempt.completedAt,
+        flaggedQuestions: attempt.flaggedQuestions,
+        examTitle: attempt.examId ? attempt.examId.title : 'Removed Exam Mock',
+        examSubject: attempt.examId ? attempt.examId.subject : 'General',
+        negativeMarking: attempt.examId ? attempt.examId.negativeMarking : false,
+        totalQuestions: questions.length,
+        gradedAnswers,
+        studentName: attempt.studentId ? attempt.studentId.name : 'Removed Student',
+        studentEmail: attempt.studentId ? attempt.studentId.email : '-'
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// @desc    Get all attempts for a specific exam
+// @route   GET /api/v1/exams/:examId/attempts
+// @access  Private (Teacher / Admin)
+exports.getExamAttempts = async (req, res) => {
+  try {
+    const attempts = await Attempt.find({ examId: req.params.examId })
+      .populate('studentId', 'name email')
+      .sort('-score') // Sort by highest score first (leaderboard rank!)
+      .exec();
+
+    res.status(200).json({ success: true, attempts });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });

@@ -1,0 +1,24 @@
+{
+  "short_name": "SEA Ghotki",
+  "name": "Sindh Educational Academy",
+  "description": "Sindh Educational Academy (SEA) Ghotki Web Portal for MDCAT & ECAT preparation.",
+  "icons": [
+    {
+      "src": "/assests/sea_logo.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assests/sea_logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#020617",
+  "theme_color": "#7c3aed",
+  "display": "standalone",
+  "orientation": "portrait"
+}
