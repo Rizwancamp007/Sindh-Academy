@@ -23,11 +23,12 @@ const seedData = async () => {
     await Review.deleteMany({});
     console.log('Cleared existing users, exams, questions, lectures, and reviews.');
 
+// Demo-only seed credentials — never use in production.
     const users = [
       {
         name: 'Seeded Student',
         email: 'student@sea.com',
-        password: 'student123',
+        password: 'StudentDemo@1234',
         role: 'student',
         isPaid: false,
         isVerified: true,
@@ -36,7 +37,7 @@ const seedData = async () => {
       {
         name: 'Premium Student',
         email: 'paid@sea.com',
-        password: 'student123',
+        password: 'StudentDemo@1234',
         role: 'student',
         isPaid: true,
         isVerified: true,
@@ -45,21 +46,21 @@ const seedData = async () => {
       {
         name: 'Academy Clerk',
         email: 'clerk@sea.com',
-        password: 'clerk123',
+        password: 'ClerkDemo@1234',
         role: 'clerk',
         isVerified: true
       },
       {
         name: 'Academy Teacher',
         email: 'teacher@sea.com',
-        password: 'teacher123',
+        password: 'TeacherDemo@1234',
         role: 'teacher',
         isVerified: true
       },
       {
         name: 'Academy Admin',
         email: 'admin@sea.com',
-        password: 'admin123',
+        password: 'AdminDemo@1234',
         role: 'admin',
         isVerified: true
       }
